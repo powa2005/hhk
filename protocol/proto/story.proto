@@ -1,0 +1,14 @@
+package storypackage;
+syntax = "proto3";
+
+message getListMessage {
+    int64 list_page = 1; // becomes listPage
+    int64 list_size = 2; // becomes listSize
+    string list_remark = 3; // becomes listRemark
+}
+
+message StoryMessage {
+    int64 story_id = 1; // becomes storyId
+    string story_title = 2; // becomes storyTitle
+    string story_content = 3; // becomes storyContent
+}

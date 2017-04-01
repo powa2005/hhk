@@ -1,0 +1,238 @@
+syntax = "proto2";
+// 
+// 设备显示协议
+
+package DeviceDisplayProtocol;
+
+// 设备显示协议
+message DeviceDisplayMessage
+{
+	required Head head = 1;	// 协议头
+	required Body body = 2;	// 协议体
+}
+
+// 协议头
+message Head
+{
+	// 协议版本
+	required uint32 version = 1 [default = 0x01];	
+	// 流水号，用于异步请求
+	required uint32 flow_number = 2;			
+	// message类型	
+	required MessageType message_type = 3;			
+	// 会话唯一标识，发起调用处指定，后续不能变化，用于授权包校验
+    required string session_no = 5;
+	// 协议校验标记，使用MD5校验body,防止篡改标识
+    required string magic_flag = 6;
+}
+// 协议消息体
+message Body
+{
+    // 出错
+	optional ErrCodeResponse error = 1;
+
+    // 心跳
+	optional HeartBeatRequest 	heart_beat_request 	=2;
+	optional HeartBeatResponse 	heart_beat_response	=3;
+
+    // 播放产品介绍
+    optional DisplayProductIntro display_product_intro = 4;
+
+    // 显示倒计时
+    optional DisplayCountdown display_countdown = 5;
+
+    // 显示进度
+    optional DisplayProgress display_progress = 6;
+
+    // 显示结果
+    optional DisplayResult display_result = 7;
+
+    // 显示二维码
+    optional DisplayQrcode display_qrcode = 8;
+
+    // 显示扫描成功
+    optional DisplayScanResult display_scan_result = 9;
+
+    // 通知用户离开
+    optional NotifyLeave notify_leave = 10;
+    
+    // 取消显示
+    optional CancelDisplay cancel_display = 11;
+
+    // 显示身体数据
+    optional DisplayBodyInfo display_body_info = 12;
+
+    // 事件回复
+    optional EventResponse event_response = 13;
+}
+
+/////////////////////////////////////////////////// 报文类型定义 ////////////////////////////////////////////////////////////////////////////
+enum MessageType
+{
+	// 出错
+	ERROR_RESPONSE = 1;
+
+	// 心跳
+	HEAT_BEAT_REQUEST = 2;
+	HEART_BEAT_RESPONSE = 3;
+
+    // 播放产品介绍
+    DISPLAY_PRODUCT_INTRO = 4;
+
+    // 显示倒计时
+    DISPLAY_COUNTDOWN = 5;
+
+    // 显示进度
+    DISPLAY_PROGRESS = 6;
+
+    // 显示结果
+    DISPLAY_RESULT = 7;
+
+    // 显示二维码
+    DISPLAY_QRCODE = 8;
+
+    // 显示扫描成功
+    DISPLAY_SCAN_RESULT = 9;
+
+    // 通知用户离开
+    NOTIFY_LEAVE = 10;
+
+    // 取消显示
+    CANCEL_DISPLAY = 11;
+
+    // 显示身体数据
+    DISPLAY_BODY_INFO = 12;
+
+    // 事件回复
+    EVENT_RESPONSE = 13;
+}
+
+/////////////////////////////////////////////////// 出错响应报文定义 ////////////////////////////////////////////////////////////////////////////
+
+enum ErrType 
+{
+	// 报文包相关
+	MESSAGE_VERSION_ERROR = 1;	// 版本出错
+	MESSAGE_PACKAGE_ERROR = 2;	// 包出错
+	MESSAGE_UNKNOWN_TYPE = 3;	// 未知类型
+	
+	// 授权码相关
+	AUTH_TOKEN_NOT_EXIST = 4; // 授权码不存在
+	AUTH_TOKEN_TIME_EXPIRED = 5; //  授权码过期
+    ACCOUNT_PASSWD_ERROR = 6; // 账号或密码错误
+}
+
+message ErrCodeResponse
+{
+	required ErrType err_type = 1;		// 出错类型
+	optional string err_msg = 2;		// 出错信息
+}
+
+
+/////////////////////////////////////////////////// 心跳报文定义 ////////////////////////////////////////////////////////////////////////////
+// 心跳发起可以客户端发，也可以服务端发
+// 心跳请求
+message HeartBeatRequest
+{
+	required HeartBeatType hb_type = 1;
+	optional string msg = 2;
+}
+// 心跳响应
+message HeartBeatResponse
+{
+	required HeartBeatType hb_type = 1;
+	optional string msg = 2;		// 当hb_type类型为HEART_BEAT_LOG 和 HEART_BEAT_DATA时候使用
+}
+
+// 心跳类型
+enum HeartBeatType
+{
+	HEART_BEAT_ALIVE = 1;	// 代表存活类型
+	HEART_BEAT_LOG = 2;		// 代表log信息
+	HEART_BEAT_DATA = 3;	// 代表metrics信息
+}
+
+message DisplayProductIntro
+{
+
+}
+
+message DisplayCountdown
+{
+    required uint32 time = 1;
+}
+
+message DisplayProgress
+{
+    required uint32 progress = 1;
+}
+
+enum ResultFileType
+{
+    Mtl = 1;
+    Png = 2;
+    Obj = 3;
+}
+
+message FileInfo
+{
+    required ResultFileType type = 1;
+    required string path = 2;
+}
+
+message DisplayResult
+{
+    repeated FileInfo file_infos = 1;
+}
+
+message DisplayQrcode
+{
+    required bytes qrcode_data = 1;
+}
+
+message DisplayScanResult
+{
+    required bool result = 1;
+}
+
+enum Stage
+{
+    IntroStage = 1;
+    MeasureStage = 2;
+    FinishStage = 3;
+}
+
+message NotifyLeave
+{
+    required Stage stage = 1;
+    optional uint32 countdown_time = 2;
+}
+
+message CancelDisplay
+{
+    
+}
+
+message DisplayBodyInfo
+{
+    required uint32 height       = 1;  // 身高
+	required uint32 wight        = 2;  // 体重
+	required uint32 body_fat     = 3;  // 体脂
+	required uint32 visceral_fat = 4;  // 内脏脂肪
+	required uint32 fluid        = 5;  // 水分
+	required uint32 muscle       = 6;  // 肌肉
+	required uint32 skeleton     = 7;  // 骨骼
+	required uint32 bmi          = 8;  // BMI
+	required uint32 kcal         = 9;  // 新陈代谢
+	optional uint32 res_50K      = 10; //人体电阻
+}
+
+enum EventType
+{
+    DisplayButtonPage = 1;
+}
+
+message EventResponse
+{
+    required EventType event_type = 1; // 事件类型
+}

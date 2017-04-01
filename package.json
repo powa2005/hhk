@@ -7,12 +7,14 @@
   "private": true,
   "scripts": {
     "test": "webpack --watch",
+    "electron": "electron ./",
     "dev": "cross-env NODE_ENV=development webpack-dev-server --open --inline --hot",
     "build": "cross-env NODE_ENV=production webpack --progress --hide-modules",
     "package": "electron-packager ./ hhk --win --out hhk --arch=x64 --version 1.6.4 --overwrite --ignore=node_modules"
   },
   "dependencies": {
     "electron": "^1.6.2",
+    "fs": "0.0.1-security",
     "vue": "^2.1.0"
   },
   "devDependencies": {
@@ -23,10 +25,13 @@
     "cross-env": "^3.0.0",
     "css-loader": "^0.25.0",
     "file-loader": "^0.9.0",
+    "protobufjs": "^6.6.5",
+    "vue-electron": "^1.0.6",
     "vue-loader": "^10.0.0",
     "vue-template-compiler": "^2.1.0",
     "vuex": "^2.2.1",
     "webpack": "^2.2.0",
-    "webpack-dev-server": "^2.2.0"
+    "webpack-dev-server": "^2.2.0",
+    "xmlhttprequest": "^1.8.0"
   }
 }

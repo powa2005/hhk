@@ -1,6 +1,6 @@
 var path = require('path')
 var webpack = require('webpack')
-
+var fs = require('fs')
 module.exports = {
   entry: './src/main.js',
   output: {
@@ -50,7 +50,11 @@ module.exports = {
   performance: {
     hints: false
   },
-  devtool: '#eval-source-map'
+  devtool: '#eval-source-map',
+  node: {
+    fs: 'empty'
+  },
+  target: 'electron-renderer'
 }
 
 if (process.env.NODE_ENV === 'production') {

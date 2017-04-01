@@ -1,0 +1,180 @@
+// 
+// 模型服务协议，用于客户端跟模型服务获取模型，获取预览模型，以及获取原始图片。
+// 客户端发送Request， 服务端回复Response
+// 
+
+package ModelServerProtocol;
+
+// 模型服务协议
+message ModelServerMessage
+{
+	required Head head = 1;
+	required Body body = 2;
+}
+
+// 协议头
+message Head
+{
+	// 协议版本
+	required uint32 version = 1 [default = 0x01];	
+	// 流水号，用于异步请求
+	required uint32 flow_number = 2;			
+	// message类型	
+	required MessageType message_type = 3;			
+	// 会话唯一标识，发起调用处指定，后续不能变化，用于授权包校验
+	required string session_no = 5;
+	// 协议校验标记(md5)
+	required string magic_flag = 6;
+}
+// 协议消息体
+message Body
+{
+	// 出错
+	optional ErrCodeResponse error = 1;
+		
+	// 心跳
+	optional HeartBeatRequest 	heart_beat_request 	=2;
+	optional HeartBeatResponse 	heart_beat_response	=3;
+	
+	// 授权验证
+	optional AuthRequest auth_request = 4;
+	optional AuthResponse auth_response = 5;
+	
+	// 获取模型
+	optional GetModelFileRequest file_request = 6;
+	optional GetModelFileResponse file_response = 7;
+	
+}
+
+/////////////////////////////////////////////////// 报文类型定义 ////////////////////////////////////////////////////////////////////////////
+enum MessageType
+{
+	// 出错
+	ERROR_RESPONSE = 1;
+	
+	// 心跳
+	HEAT_BEAT_REQUEST = 2;
+	HEAT_BEAT_RESPONSE = 3;
+	
+	// 授权验证
+	AUTH_REQUEST = 4;
+	AUTH_RESPONSE = 5;
+	
+	// 获取文件和模型
+	GET_MODEL_REQUEST = 6;
+	GET_MODEL_RESPONSE = 7;
+	
+}
+/////////////////////////////////////////////////// 心跳报文定义 ////////////////////////////////////////////////////////////////////////////
+// 心跳发起可以客户端发，也可以服务端发
+// 心跳请求
+message HeartBeatRequest
+{
+	required HeartBeatType hb_type = 1;
+	optional string msg = 2;
+}
+// 心跳响应
+message HeartBeatResponse
+{
+	required HeartBeatType hb_type = 1;
+	optional string msg = 2;		// 当hb_type类型为HEART_BEAT_LOG 和 HEART_BEAT_DATA时候使用
+}
+
+// 心跳类型
+enum HeartBeatType
+{
+	HEART_BEAT_ALIVE = 1;	// 代表存活类型
+	HEART_BEAT_LOG = 2;		// 代表log信息
+	HEART_BEAT_DATA = 3;	// 代表metrics信息
+}
+
+/////////////////////////////////////////////////// 出错响应报文定义 ////////////////////////////////////////////////////////////////////////////
+enum ErrCode 
+{
+	MESSAGE_VERSION_ERROR = 1;		// 版本出错
+	MESSAGE_PACKAGE_ERROR = 2;		// 包出错
+	MESSAGE_UNKNOWN_TYPE = 3;		// 位置类型
+
+	// 授权码相关
+	AUTH_ACCESS_TOKEN_NOT_EXIST = 4; // 授权码不存在
+	AUTH_ACCESS_TOKEN_TIME_OUT = 5; //  授权码过期
+
+	// 服务器内部错误
+	SERVER_INTERNAL_ERROR = 6;		// 服务器内部错误
+}
+
+message ErrCodeResponse
+{
+	required ErrCode err_code = 1;	// 出错类型
+	optional string err_msg = 2;	// 出错信息
+}
+
+/////////////////////////////////////////////////// 授权验证报文定义 ////////////////////////////////////////////////////////////////////////////
+message AuthRequest
+{
+	required string access_token = 1;	// 授权token，应该通过登录获取
+	optional uint32 expired_time = 2;	// 过期时间，登录步骤，登录服务返回
+}
+
+enum AuthResType
+{
+	ACCESS_TOKEN_OK = 1;				// 授权码ok
+	ACCESS_TOKEN_NOT_CORRECT = 2;		// 授权token不存在。
+	ACCESS_TOKEN_TIME_OUT = 3;			// 授权token过期。
+}
+
+message AuthResponse
+{
+	required AuthResType auth_res_type = 1;				// 授权响应状态结果
+	optional string error_msg = 2;						// 出错信息
+}
+
+/////////////////////////////////////////////////// 获取模型文件报文定义 ////////////////////////////////////////////////////////////////////////////
+message GetModelFileRequest
+{
+	required string file_flag = 2;				// 文件标识，用于给模型服务查找对应模型文件 
+	required ModelResType file_req_type = 3;	// 文件类型，文件信息还是文件数据
+	
+	optional uint32 data_size = 4;				// 用于预定包大小
+	optional uint32 begin_index = 5 [default=0];		// 用于断点续传开始，可选。 默认从文件头开始传输
+	
+}
+enum ModelResType
+{
+	FILE_INFO = 1;		// 文件基本信息 
+	FILE_DATA = 2;		// 文件数据
+}
+
+
+// 大小和下标均以字节为单位
+message GetModelFileResponse
+{
+	required string file_flag = 2;				// 模型文件标识
+	
+	// 请求类型 
+	required ModelResType mod_res_type = 3;		// 返回模型类型：基本信息，数据
+	
+	// 文件基本信息
+	optional FileInfo file_info = 4;
+	
+	// 数据
+	optional FileData file_data = 5;
+}
+
+message FileInfo
+{
+	optional int64 file_size = 4;		// 文件基本信息总大小
+}
+
+message FileData
+{
+	required uint32 data_size = 5;		// 数据大小
+	optional uint32 begin_index = 6;	// 用于断点续传开始，可选
+	required uint32 index = 8;			// 用于包序列计数，从1开始计数
+	required bool is_end = 9;			// 用于是否最后一个包
+	required bytes file_data = 10;		// 文件数据
+	required string file_type = 11;		// 文件类型
+	optional string file_md5 = 12;		// 文件md5
+}
+
+
